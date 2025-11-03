@@ -1,8 +1,9 @@
 pipeline {
   agent any
+
   environment {
-    AWS_REGION = 'us-east-1'
-    ECR_REGISTRY = "108322181673.dkr.ecr.${ap-south-1}.amazonaws.com"
+    AWS_REGION = 'ap-south-1'
+    ECR_REGISTRY = "108322181673.dkr.ecr.ap-south-1.amazonaws.com"
     ECR_REPO = "my-maven-app"
     IMAGE_TAG = "${env.BUILD_NUMBER}"
     AWS_CREDENTIALS_ID = 'aws-creds'
@@ -10,19 +11,27 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps {
+        checkout scm
+      }
     }
 
     stage('Build & Test') {
-      steps { sh 'mvn clean test' }
+      steps {
+        sh 'mvn clean test'
+      }
     }
 
     stage('Package App') {
-      steps { sh 'mvn package -DskipTests' }
+      steps {
+        sh 'mvn package -DskipTests'
+      }
     }
 
     stage('Build Docker Image') {
-      steps { sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ." }
+      steps {
+        sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
+      }
     }
 
     stage('Login & Push to AWS ECR') {
