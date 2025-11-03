@@ -56,6 +56,7 @@ pipeline {
           {
             "family": "my-maven-task",
             "networkMode": "awsvpc",
+            "executionRoleArn": "arn:aws:iam::108322181673:role/ecsTaskExecutionRole1",
             "requiresCompatibilities": ["FARGATE"],
             "cpu": "256",
             "memory": "512",
