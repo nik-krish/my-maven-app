@@ -10,6 +10,7 @@ pipeline {
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -36,15 +37,14 @@ pipeline {
 
     stage('Login & Push to AWS ECR') {
       steps {
-        withCredentials([usernamePassword(credentialsId: "${AWS_CREDENTIALS_ID}", usernameVariable: 'AWS_ID', passwordVariable: 'AWS_SECRET')]) {
-          sh '''
-            aws configure set aws_access_key_id "$AWS_ID"
-            aws configure set aws_secret_access_key "$AWS_SECRET"
-            aws configure set region ${AWS_REGION}
-            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-            docker tag ${ECR_REPO}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
-            docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
-          '''
+        script {
+          withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${AWS_REGION}") {
+            sh """
+              aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+              docker tag ${ECR_REPO}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+              docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+            """
+          }
         }
       }
     }
@@ -78,10 +78,12 @@ pipeline {
           }
           """
           writeFile file: 'taskdef.json', text: taskDef
-          sh '''
-            aws ecs register-task-definition --cli-input-json file://taskdef.json
-            aws ecs update-service --cluster my-maven-cluster --service my-maven-service --force-new-deployment
-          '''
+          withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${AWS_REGION}") {
+            sh '''
+              aws ecs register-task-definition --cli-input-json file://taskdef.json
+              aws ecs update-service --cluster my-maven-cluster --service my-maven-service --force-new-deployment
+            '''
+          }
         }
       }
     }
@@ -89,14 +91,32 @@ pipeline {
 
   post {
     success {
-      mail to: 'your.email@example.com',
-           subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-           body: "Build succeeded!\n\nURL: ${env.BUILD_URL}"
+      emailext (
+        subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """
+        ✅ Build Succeeded!
+
+        Job: ${env.JOB_NAME}
+        Build Number: ${env.BUILD_NUMBER}
+        URL: ${env.BUILD_URL}
+
+        Docker Image: ${ECR_REPO}:${IMAGE_TAG}
+        """,
+        to: "your.email@example.com"
+      )
     }
     failure {
-      mail to: 'your.email@example.com',
-           subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-           body: "Build failed.\n\nURL: ${env.BUILD_URL}"
+      emailext (
+        subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """
+        ❌ Build Failed!
+
+        Job: ${env.JOB_NAME}
+        Build Number: ${env.BUILD_NUMBER}
+        URL: ${env.BUILD_URL}
+        """,
+        to: "your.email@example.com"
+      )
     }
   }
 }
