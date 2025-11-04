@@ -82,7 +82,8 @@ pipeline {
           withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${AWS_REGION}") {
             sh '''
               aws ecs register-task-definition --cli-input-json file://taskdef.json
-              aws ecs update-service --cluster my-maven-cluster --service my-maven-service --force-new-deployment
+              aws ecs update-service --cluster my-maven-clusterq --service my-maven-task-service-177g5vis --force-new-deployment
+
             '''
           }
         }
