@@ -104,7 +104,7 @@ pipeline {
 
         Docker Image: ${ECR_REPO}:${IMAGE_TAG}
         """,
-        to: "your.email@example.com"
+        to: "s.nikhilkrishnan@gmail.com"
       )
     }
     failure {
@@ -117,7 +117,7 @@ pipeline {
         Build Number: ${env.BUILD_NUMBER}
         URL: ${env.BUILD_URL}
         """,
-        to: "your.email@example.com"
+        to: "s.nikhilkrishnan@gmail.com"
       )
     }
   }
